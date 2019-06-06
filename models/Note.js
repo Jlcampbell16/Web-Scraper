@@ -5,15 +5,25 @@ var Schema = mongoose.Schema;
 
 // Using the Schema constructor, create a new NoteSchema object
 // This is similar to a Sequelize model
-var CommentSchema = new Schema({
+var NoteSchema = new Schema({
   // `title` is of type String
-  title: String,
+  date: {
+    type: Date,
+    default: Date.now
+  },
+  title: {
+    type: String,
+  },
   // `body` is of type String
-  body: String
+  body: String,
+  _articleId: {
+    type: Schema.Types.ObjectId, 
+    ref: "Article"
+  }
 });
 
 // This creates our model from the above schema, using mongoose's model method
-var Comment = mongoose.model("Comment", CommentSchema);
+var Note = mongoose.model("Note", NoteSchema);
 
 // Export the Note model
-module.exports = Comment;
+module.exports = Note;

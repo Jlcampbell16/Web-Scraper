@@ -2,7 +2,7 @@
 var express = require("express");
 var logger = require("morgan");
 var mongoose = require("mongoose");
-
+var exphbs = require("express-handlebars")
 var axios = require("axios");
 var cheerio = require("cheerio");
 
@@ -27,9 +27,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 // Make public a static folder
 app.use(express.static("public"));
+// Connect Handlebars to our Express app
+app.engine("handlebars", exphbs({ defaultLayout: "main" }));
+app.set("view engine", "handlebars");
+
+// Have every request go through our route middleware
+// app.use(routes);
 
 // Connect to the Mongo DB
-mongoose.connect("mongodb://localhost/scraper", { useNewUrlParser: true });
+var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/scraper";
+mongoose.connect(MONGODB_URI);
 
 
 //Routes
@@ -44,7 +51,7 @@ app.get("/scrape", function(req, res) {
 
       // Add the text and href of every link, and save them as properties of the result object
       result.title = $(this).children("a").text();
-      // result.title = $(this).children("p").text();
+      // result.summary = $(this).children("p").text();
       result.link = $(this).children("a").attr("href");
 
       // Create a new Article using the `result` object built from scraping
@@ -70,7 +77,7 @@ app.get("/articles", function(req, res) {
 // Route for grabbing a specific Article by id, populate it with it's note
 app.get("/articles/:id", function(req, res) {
   db.Article.findOne({_id: req.params.id})
-  .populate("")
+  .populate("note")
   .then(function(article){
     res.json(article)
   })
@@ -79,11 +86,11 @@ app.get("/articles/:id", function(req, res) {
   });
 });
 
-// Route for saving/updating an Article's associated Comment
+// Route for saving/updating an Article's associated note
 app.post("/articles/:id", function(req, res) {
-  db.Comment.create(req.body)
-    .then(function(dbComment){
-      return db.Article.findOneAndUpdate({_id: req.params.id}, {comment: dbComment._id}, {new: true});
+  db.Note.create(req.body)
+    .then(function(dbNote){
+      return db.Article.findOneAndUpdate({_id: req.params.id}, {note: dbNote._id}, {new: true});
     }).then(function(dbArticle){
       res.json(dbArticle)
     })
